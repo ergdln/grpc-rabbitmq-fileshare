@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package fileservice;
+
+option go_package = "grpc-rabbitmq-fileshare/grpc-server/proto";
+
+// Mensagem vazia para requisições sem parâmetros
+message Empty {
+}
+
+// Resposta com lista de arquivos
+message FileListResponse {
+  repeated string files = 1;
+}
+
+// Requisição para upload de arquivo
+message UploadRequest {
+  string name = 1;
+  bytes data = 2;
+}
+
+// Resultado de uma operação
+message OperationResult {
+  bool success = 1;
+  string message = 2;
+}
+
+// Requisição para download de arquivo
+message DownloadRequest {
+  string name = 1;
+}
+
+// Resposta com dados do arquivo
+message DownloadResponse {
+  bytes data = 1;
+}
+
+// Serviço de arquivos
+service FileService {
+  // Lista todos os arquivos disponíveis
+  rpc ListFiles (Empty) returns (FileListResponse);
+  
+  // Faz upload de um arquivo
+  rpc UploadFile (UploadRequest) returns (OperationResult);
+  
+  // Faz download de um arquivo
+  rpc DownloadFile (DownloadRequest) returns (DownloadResponse);
+}
+
