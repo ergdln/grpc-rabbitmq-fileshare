@@ -12,8 +12,14 @@ const (
 )
 
 func main() {
+	// Obtém o endereço do servidor da variável de ambiente ou usa o padrão
+	serverAddrEnv := os.Getenv("GRPC_SERVER_ADDR")
+	if serverAddrEnv == "" {
+		serverAddrEnv = defaultServerAddr
+	}
+
 	// Define flags
-	serverAddr := flag.String("server", defaultServerAddr, "Endereço do servidor gRPC (ex: localhost:50051)")
+	serverAddr := flag.String("server", serverAddrEnv, "Endereço do servidor gRPC (ex: localhost:50051)")
 	flag.Parse()
 
 	// Verifica se há argumentos suficientes

@@ -1,0 +1,35 @@
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+# Copia os arquivos de dependências
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copia o código fonte
+COPY . .
+
+# Gera os arquivos proto (se necessário)
+RUN cd grpc-server/proto && \
+    if [ ! -f fileservice.pb.go ]; then \
+        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest; \
+    fi
+
+# Compila o servidor gRPC
+WORKDIR /app/grpc-server
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/grpc-server .
+
+# Imagem final
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+COPY --from=builder /app/grpc-server .
+
+EXPOSE 50051
+
+CMD ["./grpc-server"]
+

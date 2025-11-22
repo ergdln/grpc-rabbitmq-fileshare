@@ -1,0 +1,26 @@
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+# Copia os arquivos de dependências
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copia o código fonte
+COPY . .
+
+# Compila o cliente RabbitMQ
+WORKDIR /app/rabbit-client
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/rabbit-client .
+
+# Imagem final
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+COPY --from=builder /app/rabbit-client .
+
+ENTRYPOINT ["./rabbit-client"]
+

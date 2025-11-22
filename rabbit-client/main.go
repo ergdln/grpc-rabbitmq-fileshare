@@ -12,8 +12,14 @@ const (
 )
 
 func main() {
+	// Obtém a URL do AMQP da variável de ambiente ou usa o padrão
+	amqpURLEnv := os.Getenv("AMQP_URL")
+	if amqpURLEnv == "" {
+		amqpURLEnv = defaultAMQPURL
+	}
+
 	// Define flags
-	amqpURL := flag.String("amqp-url", defaultAMQPURL, "URL de conexão do RabbitMQ")
+	amqpURL := flag.String("amqp-url", amqpURLEnv, "URL de conexão do RabbitMQ")
 	flag.Parse()
 
 	// Verifica se há argumentos suficientes

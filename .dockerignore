@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.yml
+.dockerignore
+Dockerfile*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+tests/
+*.test
+
+# Scripts (opcional, pode ser útil manter)
+# scripts/
+
+# Data directories
+data/
+storage/
+
+# Logs
+*.log
+
