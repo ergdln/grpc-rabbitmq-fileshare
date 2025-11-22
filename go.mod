@@ -2,7 +2,10 @@ module grpc-rabbitmq-fileshare
 
 go 1.24.0
 
-require google.golang.org/grpc v1.77.0
+require (
+	github.com/streadway/amqp v1.1.0
+	google.golang.org/grpc v1.77.0
+)
 
 require (
 	golang.org/x/net v0.46.1-0.20251013234738-63d1a5100f82 // indirect
