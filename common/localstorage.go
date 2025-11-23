@@ -29,10 +29,9 @@ func NewLocalStorage(baseDir string) (*LocalStorage, error) {
 }
 
 // ensureDir cria o diretório base se ele não existir
+// NOTA: Esta função assume que o mutex já está travado pelo chamador
 func (ls *LocalStorage) ensureDir() error {
-	ls.mu.Lock()
-	defer ls.mu.Unlock()
-
+	// Não trava o mutex aqui porque o chamador já deve ter travado
 	if err := os.MkdirAll(ls.baseDir, 0755); err != nil {
 		return fmt.Errorf("erro ao criar diretório %s: %w", ls.baseDir, err)
 	}
@@ -77,7 +76,7 @@ func (ls *LocalStorage) UploadFile(name string, data []byte) error {
 
 	// Garante que o diretório existe antes de escrever
 	if err := ls.ensureDir(); err != nil {
-		return err
+		return fmt.Errorf("erro ao garantir diretório: %w", err)
 	}
 
 	filePath := filepath.Join(ls.baseDir, name)
@@ -120,4 +119,3 @@ func (ls *LocalStorage) DownloadFile(name string) ([]byte, error) {
 
 	return data, nil
 }
-

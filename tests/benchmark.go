@@ -32,10 +32,10 @@ type Result struct {
 
 // BenchmarkRunner executa benchmarks
 type BenchmarkRunner struct {
-	results    []Result
-	resultsMu  sync.Mutex
-	csvWriter  *csv.Writer
-	csvFile    *os.File
+	results   []Result
+	resultsMu sync.Mutex
+	csvWriter *csv.Writer
+	csvFile   *os.File
 }
 
 // NewBenchmarkRunner cria um novo runner de benchmark
@@ -46,7 +46,7 @@ func NewBenchmarkRunner(csvPath string) (*BenchmarkRunner, error) {
 	}
 
 	writer := csv.NewWriter(file)
-	
+
 	// Escreve cabeçalho
 	header := []string{"timestamp", "system", "operation", "file_size_kb", "clients", "rtt_ms", "success"}
 	if err := writer.Write(header); err != nil {
@@ -98,6 +98,58 @@ func (br *BenchmarkRunner) RecordResult(result Result) {
 	}
 }
 
+// GetOrCreateGRPCConnection obtém ou cria uma conexão gRPC (reutiliza conexões)
+var grpcConnections = make(map[string]*grpc.ClientConn)
+var grpcConnMu sync.Mutex
+
+func getOrCreateGRPCConnection(serverAddr string) (*grpc.ClientConn, error) {
+	grpcConnMu.Lock()
+	defer grpcConnMu.Unlock()
+
+	if conn, exists := grpcConnections[serverAddr]; exists {
+		// Verifica se a conexão ainda está válida
+		state := conn.GetState()
+		if state.String() == "READY" || state.String() == "IDLE" {
+			return conn, nil
+		}
+		// Conexão inválida, remove e cria nova
+		conn.Close()
+		delete(grpcConnections, serverAddr)
+	}
+
+	// Cria nova conexão
+	conn, err := grpc.NewClient(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	grpcConnections[serverAddr] = conn
+	return conn, nil
+}
+
+// WarmUpGRPCConnection faz warm-up de uma conexão gRPC sem registrar no CSV
+func WarmUpGRPCConnection(serverAddr string, operation string) error {
+	conn, err := getOrCreateGRPCConnection(serverAddr)
+	if err != nil {
+		return err
+	}
+
+	client := proto.NewFileServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Executa uma operação simples para aquecer a conexão
+	switch operation {
+	case "list":
+		_, err = client.ListFiles(ctx, &proto.Empty{})
+	default:
+		// Para outras operações, faz list como warm-up
+		_, err = client.ListFiles(ctx, &proto.Empty{})
+	}
+
+	return err
+}
+
 // RunGRPCOperation executa uma operação gRPC e mede o RTT
 func (br *BenchmarkRunner) RunGRPCOperation(
 	serverAddr string,
@@ -111,22 +163,22 @@ func (br *BenchmarkRunner) RunGRPCOperation(
 	var err error
 	success := true
 
-	// Conecta ao servidor gRPC
-	conn, connErr := grpc.NewClient(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Obtém ou cria conexão gRPC (reutiliza conexões)
+	conn, connErr := getOrCreateGRPCConnection(serverAddr)
 	if connErr != nil {
 		br.RecordResult(Result{
 			Timestamp:  start,
-			System:      "grpc",
-			Operation:   operation,
-			FileSizeKB:  fileSizeKB,
-			Clients:     clientNum,
-			RTTMs:       0,
-			Success:     false,
-			Error:       connErr,
+			System:     "grpc",
+			Operation:  operation,
+			FileSizeKB: fileSizeKB,
+			Clients:    clientNum,
+			RTTMs:      0,
+			Success:    false,
+			Error:      connErr,
 		})
 		return
 	}
-	defer conn.Close()
+	// NÃO fecha a conexão aqui - ela será reutilizada
 
 	client := proto.NewFileServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -169,13 +221,13 @@ func (br *BenchmarkRunner) RunGRPCOperation(
 
 	br.RecordResult(Result{
 		Timestamp:  start,
-		System:      "grpc",
-		Operation:   operation,
-		FileSizeKB:  fileSizeKB,
-		Clients:     clientNum,
-		RTTMs:       rttMs,
-		Success:     success,
-		Error:       err,
+		System:     "grpc",
+		Operation:  operation,
+		FileSizeKB: fileSizeKB,
+		Clients:    clientNum,
+		RTTMs:      rttMs,
+		Success:    success,
+		Error:      err,
 	})
 }
 
@@ -197,13 +249,13 @@ func (br *BenchmarkRunner) RunRabbitOperation(
 	if connErr != nil {
 		br.RecordResult(Result{
 			Timestamp:  start,
-			System:      "rabbit",
-			Operation:   operation,
-			FileSizeKB:  fileSizeKB,
-			Clients:     clientNum,
-			RTTMs:       0,
-			Success:     false,
-			Error:       connErr,
+			System:     "rabbit",
+			Operation:  operation,
+			FileSizeKB: fileSizeKB,
+			Clients:    clientNum,
+			RTTMs:      0,
+			Success:    false,
+			Error:      connErr,
 		})
 		return
 	}
@@ -213,13 +265,13 @@ func (br *BenchmarkRunner) RunRabbitOperation(
 	if channelErr != nil {
 		br.RecordResult(Result{
 			Timestamp:  start,
-			System:      "rabbit",
-			Operation:   operation,
-			FileSizeKB:  fileSizeKB,
-			Clients:     clientNum,
-			RTTMs:       0,
-			Success:     false,
-			Error:       channelErr,
+			System:     "rabbit",
+			Operation:  operation,
+			FileSizeKB: fileSizeKB,
+			Clients:    clientNum,
+			RTTMs:      0,
+			Success:    false,
+			Error:      channelErr,
 		})
 		return
 	}
@@ -230,13 +282,13 @@ func (br *BenchmarkRunner) RunRabbitOperation(
 	if queueErr != nil {
 		br.RecordResult(Result{
 			Timestamp:  start,
-			System:      "rabbit",
-			Operation:   operation,
-			FileSizeKB:  fileSizeKB,
-			Clients:     clientNum,
-			RTTMs:       0,
-			Success:     false,
-			Error:       queueErr,
+			System:     "rabbit",
+			Operation:  operation,
+			FileSizeKB: fileSizeKB,
+			Clients:    clientNum,
+			RTTMs:      0,
+			Success:    false,
+			Error:      queueErr,
 		})
 		return
 	}
@@ -301,13 +353,13 @@ func (br *BenchmarkRunner) RunRabbitOperation(
 
 	br.RecordResult(Result{
 		Timestamp:  start,
-		System:      "rabbit",
-		Operation:   operation,
-		FileSizeKB:  fileSizeKB,
-		Clients:     clientNum,
-		RTTMs:       rttMs,
-		Success:     success,
-		Error:       err,
+		System:     "rabbit",
+		Operation:  operation,
+		FileSizeKB: fileSizeKB,
+		Clients:    clientNum,
+		RTTMs:      rttMs,
+		Success:    success,
+		Error:      err,
 	})
 }
 
@@ -328,7 +380,7 @@ func (br *BenchmarkRunner) GetStats() map[string]interface{} {
 		if result.Success {
 			successCount++
 			totalRTT += result.RTTMs
-			
+
 			if i == 0 || result.RTTMs < minRTT {
 				minRTT = result.RTTMs
 			}
@@ -343,7 +395,7 @@ func (br *BenchmarkRunner) GetStats() map[string]interface{} {
 
 	return map[string]interface{}{
 		"total_operations": len(br.results),
-		"successful":        successCount,
+		"successful":       successCount,
 		"failed":           len(br.results) - successCount,
 		"success_rate":     fmt.Sprintf("%.2f%%", successRate),
 		"avg_rtt_ms":       fmt.Sprintf("%.3f", avgRTT),
@@ -351,4 +403,3 @@ func (br *BenchmarkRunner) GetStats() map[string]interface{} {
 		"max_rtt_ms":       fmt.Sprintf("%.3f", maxRTT),
 	}
 }
-

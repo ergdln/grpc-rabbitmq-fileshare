@@ -97,7 +97,7 @@ func main() {
 
 	// Executa benchmarks
 	startTime := time.Now()
-	
+
 	for _, sys := range systems {
 		for _, op := range operations {
 			// Determina tamanhos de arquivo
@@ -112,7 +112,19 @@ func main() {
 
 			for _, sizeKB := range fileSizes {
 				fmt.Printf("🚀 Executando: %s/%s (arquivo: %d KB, clientes: %d)\n", sys, op, sizeKB, *numClients)
-				
+
+				// Warm-up: cria conexões antes de começar a medir
+				if sys == "grpc" {
+					fmt.Printf("   🔥 Aquecendo conexões gRPC...\n")
+					for i := 0; i < *numClients; i++ {
+						// Cria conexão de warm-up (não registra no CSV)
+						if err := WarmUpGRPCConnection(*grpcAddr, op); err != nil {
+							fmt.Printf("   ⚠️  Aviso: erro no warm-up: %v\n", err)
+						}
+					}
+					fmt.Printf("   ✅ Conexões aquecidas\n")
+				}
+
 				// Calcula operações por cliente
 				opsPerClient := *numOperations / *numClients
 				remainingOps := *numOperations % *numClients
@@ -131,7 +143,7 @@ func main() {
 
 					go func(clientID, ops int) {
 						defer wg.Done()
-						
+
 						// Espera todos os clientes estarem prontos
 						startBarrier.Done()
 						startBarrier.Wait()
@@ -163,7 +175,7 @@ func main() {
 	}
 
 	totalTime := time.Since(startTime)
-	
+
 	// Mostra estatísticas
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println("  Estatísticas")
@@ -197,4 +209,3 @@ func generateTestFile(filePath string, sizeBytes int) error {
 	_, err = file.Write(data)
 	return err
 }
-

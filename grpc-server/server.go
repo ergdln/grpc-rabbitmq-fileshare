@@ -63,6 +63,7 @@ func (s *fileServiceServer) UploadFile(ctx context.Context, req *proto.UploadReq
 		}, nil
 	}
 
+	log.Printf("[UploadFile] Iniciando escrita do arquivo %s", req.Name)
 	err := s.storage.UploadFile(req.Name, req.Data)
 	if err != nil {
 		log.Printf("[UploadFile] Erro ao fazer upload do arquivo %s: %v", req.Name, err)
@@ -135,4 +136,3 @@ func getStorageDir(storage common.FileService) string {
 	}
 	return "configurado"
 }
-
