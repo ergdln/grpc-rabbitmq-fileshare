@@ -117,8 +117,16 @@ func getOrCreateGRPCConnection(serverAddr string) (*grpc.ClientConn, error) {
 		delete(grpcConnections, serverAddr)
 	}
 
-	// Cria nova conexão
-	conn, err := grpc.NewClient(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Cria nova conexão com tamanho máximo de mensagem de 50MB
+	// Isso permite upload/download de arquivos de até 50MB
+	conn, err := grpc.NewClient(
+		serverAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(50*1024*1024), // 50MB
+			grpc.MaxCallSendMsgSize(50*1024*1024), // 50MB
+		),
+	)
 	if err != nil {
 		return nil, err
 	}

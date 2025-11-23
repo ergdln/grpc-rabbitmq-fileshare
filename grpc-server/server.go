@@ -108,8 +108,12 @@ func StartServer(port string, storage common.FileService) error {
 		return fmt.Errorf("falha ao escutar na porta %s: %w", port, err)
 	}
 
-	// Cria o servidor gRPC
-	grpcServer := grpc.NewServer()
+	// Cria o servidor gRPC com tamanho máximo de mensagem de 50MB
+	// Isso permite upload/download de arquivos de até 50MB
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(50*1024*1024), // 50MB
+		grpc.MaxSendMsgSize(50*1024*1024), // 50MB
+	)
 
 	// Registra o serviço
 	fileServiceServer := NewFileServiceServer(storage)

@@ -22,10 +22,15 @@ type Client struct {
 
 // NewClient cria uma nova instância do cliente gRPC
 func NewClient(serverAddr string) (*Client, error) {
-	// Conecta ao servidor
+	// Conecta ao servidor com tamanho máximo de mensagem de 50MB
+	// Isso permite upload/download de arquivos de até 50MB
 	conn, err := grpc.NewClient(
 		serverAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(50 * 1024 * 1024), // 50MB
+			grpc.MaxCallSendMsgSize(50 * 1024 * 1024), // 50MB
+		),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao conectar ao servidor: %w", err)
