@@ -244,6 +244,8 @@ docker-compose run --rm -v "$(pwd):/workspace" rabbit-client download arquivo.tx
 
 ## 📊 Resultados
 
+> **Nota**: Os resultados apresentados são exemplos baseados em execuções reais. Valores podem variar dependendo do hardware e condições do sistema.
+
 ### Testes Sistemáticos
 
 Os testes sistemáticos geram gráficos comparativos mostrando:
@@ -288,26 +290,28 @@ Os testes de concorrência mista geram análises detalhadas:
 
 ### Gráficos Gerados
 
-Os notebooks de análise geram os seguintes gráficos:
+Os notebooks de análise geram os seguintes gráficos (salvos em `results/plots/`):
 
 **Testes Sistemáticos** (`generate_plots.ipynb`):
-- `rtt_vs_clients_list_0kb.png`
-- `rtt_vs_clients_upload_10kb.png`
-- `rtt_vs_clients_upload_1024kb.png`
-- `rtt_vs_clients_upload_10240kb.png`
-- `rtt_vs_clients_download_10kb.png`
-- `rtt_vs_clients_download_1024kb.png`
-- `rtt_vs_clients_download_10240kb.png`
-- `rtt_vs_file_size_*.png`
+- `rtt_vs_clients_list_0kb.png` - RTT de listagem vs. número de clientes
+- `rtt_vs_clients_upload_10kb.png` - Upload 10KB vs. clientes
+- `rtt_vs_clients_upload_1024kb.png` - Upload 1MB vs. clientes
+- `rtt_vs_clients_upload_10240kb.png` - Upload 10MB vs. clientes
+- `rtt_vs_clients_download_10kb.png` - Download 10KB vs. clientes
+- `rtt_vs_clients_download_1024kb.png` - Download 1MB vs. clientes
+- `rtt_vs_clients_download_10240kb.png` - Download 10MB vs. clientes
+- `rtt_vs_file_size_*.png` - RTT vs. tamanho de arquivo
 
 **Concorrência Mista** (`analyze_mixed_concurrency.ipynb`):
-- `mixed_concurrency_rtt_by_system.png`
-- `mixed_concurrency_rtt_by_operation.png`
-- `mixed_concurrency_rtt_by_file_size.png`
-- `mixed_concurrency_rtt_distribution.png`
-- `mixed_concurrency_rtt_boxplot.png`
-- `mixed_concurrency_success_rate.png`
-- `mixed_concurrency_rtt_over_time.png`
+- `mixed_concurrency_rtt_by_system.png` - Comparação geral gRPC vs RabbitMQ
+- `mixed_concurrency_rtt_by_operation.png` - RTT por tipo de operação
+- `mixed_concurrency_rtt_by_file_size.png` - RTT por tamanho de arquivo
+- `mixed_concurrency_rtt_distribution.png` - Distribuição de RTT (histograma)
+- `mixed_concurrency_rtt_boxplot.png` - Box plot com percentis
+- `mixed_concurrency_success_rate.png` - Taxa de sucesso por sistema
+- `mixed_concurrency_rtt_over_time.png` - Evolução temporal do RTT
+
+> 💡 **Dica**: Execute os notebooks Jupyter para gerar os gráficos interativamente e explorar os dados em detalhes.
 
 ## 📈 Análise de Dados
 
@@ -478,24 +482,43 @@ docker-compose logs rabbit-server
 
 # Verificar se está rodando
 docker-compose ps
+
+# Reiniciar serviços
+docker-compose restart grpc-server rabbit-server
 ```
 
 ### Erro de timeout
 
 - Verifique se os servidores estão acessíveis
-- Aumente o timeout no código se necessário
+- Aumente o timeout no código se necessário (padrão: 30s)
 - Verifique recursos do sistema (CPU/memória)
+- Verifique se há muitos clientes simultâneos sobrecarregando o sistema
 
 ### Arquivos grandes falhando (gRPC)
 
-- Verifique se o limite de 50MB está configurado
+- Verifique se o limite de 50MB está configurado no servidor e cliente
 - Reconstrua o Docker: `docker-compose build --no-cache grpc-server`
+- Reinicie o container: `docker-compose up -d grpc-server`
 
 ### RabbitMQ não processa mensagens
 
-- Verifique a interface de gerenciamento: http://localhost:15672
+- Verifique a interface de gerenciamento: http://localhost:15672 (guest/guest)
 - Verifique logs: `docker-compose logs rabbit-server`
-- Verifique se a fila está sendo consumida
+- Verifique se a fila `rpc-file-requests` está sendo consumida
+- Verifique se o servidor RabbitMQ está rodando: `docker-compose ps rabbit-server`
+
+### Erro "no such file or directory" ao executar testes
+
+- Crie o diretório de resultados: `mkdir -p results`
+- Verifique permissões do diretório
+- Use caminhos absolutos ou relativos corretos
+
+### Performance degradada
+
+- Verifique recursos do sistema: `docker stats`
+- Reduza número de clientes simultâneos
+- Verifique se há outros processos consumindo recursos
+- Considere aumentar limites de recursos no Docker Compose
 
 ## 📚 Documentação Adicional
 
