@@ -246,6 +246,18 @@ docker-compose run --rm -v "$(pwd):/workspace" rabbit-client download arquivo.tx
 
 > **Nota**: Os resultados apresentados são exemplos baseados em execuções reais. Valores podem variar dependendo do hardware e condições do sistema.
 
+### Exemplo de Visualizações
+
+Após executar os testes e gerar os gráficos, você pode adicionar imagens dos resultados ao README:
+
+```markdown
+### RTT por Sistema (Concorrência Mista)
+![RTT por Sistema](results/plots/mixed_concurrency_rtt_by_system.png)
+
+### RTT vs. Número de Clientes (Upload 1MB)
+![RTT vs Clientes](results/plots/rtt_vs_clients_upload_1024kb.png)
+```
+
 ### Testes Sistemáticos
 
 Os testes sistemáticos geram gráficos comparativos mostrando:
@@ -527,29 +539,16 @@ docker-compose restart grpc-server rabbit-server
 - [tests/README.md](tests/README.md) - Documentação dos testes
 - [scripts/README_ANALYSIS.md](scripts/README_ANALYSIS.md) - Guia de análise
 
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Por favor:
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
 ## 📄 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
 ## 👥 Autores
 
-- Seu Nome - [@seu-usuario](https://github.com/seu-usuario)
+- Ernesto Gonçalves - [@ergdln](https://github.com/ergdln)
+- Fernanda Pascoal - [@fernandapascoal](https://github.com/fernandapascoal)
 
-## 🙏 Agradecimentos
 
-- Google gRPC team
-- RabbitMQ team
-- Comunidade Go
 
 ---
 
