@@ -1,0 +1,3 @@
+system,total_operations,successful,failed,success_rate,mean_rtt_ms,p50_rtt_ms,p95_rtt_ms,p99_rtt_ms,throughput_ops_per_sec
+grpc,150000,150000,0,100.00,1437.337,83.735,10681.077,12048.685,67.42
+rabbit,150000,150000,0,100.00,2799.543,2545.395,5084.831,8444.822,35.18
